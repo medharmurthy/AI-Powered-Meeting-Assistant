@@ -1,0 +1,50 @@
+profile: auto          # auto | lite | standard | quality. auto picks from VRAM; env VERBATIM_PROFILE overrides
+
+limits:
+  max_upload_mb: 500
+  allowed_ext: [wav, mp3, m4a, aac, flac, ogg, opus, webm, mp4, mov, mkv]
+  min_duration_s: 2
+  silence_dbfs: -55            # whole-file RMS below this => SILENT_AUDIO
+
+stt:
+  language: en
+  beam_size: 5
+  vad_min_silence_ms: 500
+  cpu_model: distil-large-v3
+
+llm:
+  provider: ollama
+  host: http://127.0.0.1:11434
+  temperature: 0
+  seed: 7
+  timeout_s: 600
+  unload_after_stage: true
+
+refine:
+  window: 40                   # editable segments per call
+  context: 4                   # read-only segments on each side
+  max_original_words: 6
+  hint_min_score: 72
+
+document:
+  support_threshold: 0.4       # min share of item words found in cited lines (+-1)
+  owner_window: 4              # owner name must appear within +-4 lines of cited lines
+  deadline_window: 2
+  verify_pass: true
+
+profiles:
+  lite:       # <= 6 GB VRAM or CPU only
+    stt:        {model: distil-large-v3}
+    refiner:    {model: "qwen3:4b",  num_ctx: 8192,  think: false, supports_think: true}
+    documenter: {model: "gemma3:4b", num_ctx: 12288, supports_think: false}
+    max_minutes: 30
+  standard:   # 8 GB VRAM
+    stt:        {model: large-v3}
+    refiner:    {model: "qwen3:8b",   num_ctx: 8192,  think: false, supports_think: true}
+    documenter: {model: "gemma3:12b", num_ctx: 16384, supports_think: false}
+    max_minutes: 45
+  quality:    # >= 12 GB VRAM
+    stt:        {model: large-v3}
+    refiner:    {model: "qwen3:14b",  num_ctx: 8192,  think: false, supports_think: true}
+    documenter: {model: "gemma3:12b", num_ctx: 32768, supports_think: false}
+    max_minutes: 90
