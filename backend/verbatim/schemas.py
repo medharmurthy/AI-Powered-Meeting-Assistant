@@ -35,6 +35,17 @@ class DomainProfile(BaseModel):
     names: list[str]
 
 
+class Proposal(BaseModel):
+    segment_id: int
+    original: str
+    corrected: str
+    reason: str
+
+
+class ProposalList(BaseModel):
+    corrections: list[Proposal] = Field(default_factory=list)
+
+
 class Correction(BaseModel):
     id: str  # "c1", "c2", ...
     segment_id: int

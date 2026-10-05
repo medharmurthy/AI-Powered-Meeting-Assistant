@@ -10,6 +10,7 @@ import time
 from verbatim.config import find_repo_root, get_config, load_config
 from verbatim.errors import PipelineError
 from verbatim.ingest import process_audio_file, validate_file_extension
+from verbatim.refine import refine_transcript
 from verbatim.stt import format_time, transcribe_audio
 from verbatim.store import (
     create_run,
@@ -103,7 +104,7 @@ def main():
         sys.exit(1)
 
     # Run STT stage
-    if args.stage in ("stt", "all"):
+    if args.stage in ("stt", "refine", "all"):
         print("\n--- Transcription ---")
         t_start = time.time()
 
@@ -128,6 +129,26 @@ def main():
             )
         except PipelineError as e:
             print(f"Transcription failed: {e}", file=sys.stderr)
+            sys.exit(1)
+
+    # Run Refine stage
+    if args.stage in ("refine", "all"):
+        print("\n--- Refinement ---")
+        t_ref_start = time.time()
+        try:
+            refined = refine_transcript(run_id=run_id)
+            print(f"Domain: {refined.profile.domain} | Topic: {refined.profile.topic}")
+            print(f"Likely terms: {', '.join(refined.profile.likely_terms[:10])}...")
+            applied_cnt = sum(1 for c in refined.corrections if c.status == "applied")
+            blocked_cnt = sum(1 for c in refined.corrections if c.status == "blocked")
+            print(f"Corrections: {applied_cnt} applied, {blocked_cnt} blocked")
+            for c in refined.corrections:
+                flag = "[APPLIED]" if c.status == "applied" else f"[BLOCKED: {c.block_reason}]"
+                print(f"  {flag} Line {c.segment_id}: '{c.original}' -> '{c.corrected}' ({c.reason})")
+            t_ref_elapsed = time.time() - t_ref_start
+            print(f"Refinement completed in {t_ref_elapsed:.2f}s (model: {refined.model})")
+        except PipelineError as e:
+            print(f"Refinement failed: {e}", file=sys.stderr)
             sys.exit(1)
 
 
