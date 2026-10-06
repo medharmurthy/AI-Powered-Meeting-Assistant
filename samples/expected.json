@@ -1,0 +1,41 @@
+{
+  "decisions_present": [
+    "Migrate the session cache from Memcached to Redis",
+    "Do not upgrade PostgreSQL to version 16 this quarter"
+  ],
+  "decisions_absent": [
+    "gRPC",
+    "Kafka",
+    "Grafana"
+  ],
+  "unresolved_present": [
+    {
+      "text": "gRPC",
+      "kinds": ["deferred", "proposal"]
+    },
+    {
+      "text": "Grafana",
+      "kinds": ["possible_task", "proposal"]
+    }
+  ],
+  "tasks": [
+    {
+      "match": "Terraform",
+      "owner": "Dan",
+      "deadline": "by Thursday"
+    },
+    {
+      "match": "OAuth",
+      "owner": "Priya",
+      "deadline": null
+    },
+    {
+      "match": "credentials",
+      "owner": null,
+      "deadline_contains": ["audit", "fifteenth", "15th"]
+    }
+  ],
+  "tasks_forbidden": [
+    "Grafana"
+  ]
+}
