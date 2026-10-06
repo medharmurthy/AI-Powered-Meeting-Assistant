@@ -54,10 +54,13 @@ def get_run_dir(run_id: str, must_exist: bool = False) -> Path:
     return path
 
 
-def create_run(filename: str, fake: bool = False) -> str:
+def create_run(filename: str, fake: bool | None = None) -> str:
     run_id = generate_run_id()
     run_dir = get_run_dir(run_id)
     run_dir.mkdir(parents=True, exist_ok=True)
+
+    if fake is None:
+        fake = os.environ.get("VERBATIM_FAKE") == "1"
 
     meta = {
         "id": run_id,
@@ -67,7 +70,7 @@ def create_run(filename: str, fake: bool = False) -> str:
         "stage": None,
         "duration": None,
         "title": None,
-        "fake": fake,
+        "fake": bool(fake),
     }
     save_meta(run_id, meta)
 

@@ -183,9 +183,18 @@ export const useRunStore = create<RunStoreState>((set, get) => ({
 
     try {
       const initial = await fetchRun(runId);
-      set({ currentRun: initial, isLoading: false });
 
       if (initial.status === 'queued' || initial.status === 'running') {
+        // Rebuild clean state from event log
+        const cleanState: RunState = {
+          ...initialRunState,
+          id: initial.id,
+          filename: initial.filename,
+          fake: initial.fake,
+          models: initial.models,
+        };
+        set({ currentRun: cleanState, isLoading: false });
+
         const unsubscribe = subscribeToRunEvents(
           runId,
           0,
@@ -206,6 +215,9 @@ export const useRunStore = create<RunStoreState>((set, get) => ({
           }
         );
         set({ activeUnsubscribe: unsubscribe });
+      } else {
+        // Completed or failed run: state directly from materialized server JSON
+        set({ currentRun: initial, isLoading: false });
       }
     } catch (err: any) {
       console.error('Failed to load run', err);
