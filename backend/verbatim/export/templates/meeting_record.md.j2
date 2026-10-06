@@ -1,0 +1,55 @@
+# {{ title }}
+{{ source_file }} · {{ date }} · {{ duration }}
+
+## Summary
+{{ summary }}
+
+## Attendees
+{% if attendees %}
+{% for a in attendees %}- {{ a }}
+{% endfor %}
+{% else %}
+None specified.
+{% endif %}
+
+## Minutes
+{% if minutes %}
+{% for topic in minutes %}
+### {{ topic.title }}
+{% for p in topic.points %}- {{ p.text }}{% if p.time %} [{{ p.time }}]{% endif %}
+{% endfor %}
+{% endfor %}
+{% else %}
+None recorded.
+{% endif %}
+
+## Decisions
+{% if decisions %}
+{% for d in decisions %}- **{{ d.id }}.** {{ d.text }}{% if d.time %} [{{ d.time }}]{% endif %}
+{% if d.rationale %}  *Rationale:* {{ d.rationale }}
+{% endif %}
+{% endfor %}
+{% else %}
+None were agreed in this recording.
+{% endif %}
+
+## Discussed, not settled
+{% if unresolved %}
+{% for u in unresolved %}- **{{ u.id }}.** ({{ u.kind }}) {{ u.text }}{% if u.time %} [{{ u.time }}]{% endif %}
+{% endfor %}
+{% else %}
+None.
+{% endif %}
+
+## Action items
+{% if action_items %}
+| # | Task | Owner | Deadline | Source |
+|---|------|-------|----------|--------|
+{% for a in action_items %}| {{ a.id }} | {{ a.task | replace("|", "\\|") }} | {{ a.owner or "Unspecified" }} | {{ a.deadline or "Unspecified" }} | [{{ a.time }}] |
+{% endfor %}
+{% else %}
+None were assigned in this recording.
+{% endif %}
+
+## How this was made
+STT: {{ models.stt }} · Refiner: {{ models.refiner }} · Documenter: {{ models.documenter }} · Generated: {{ generated_at }}
