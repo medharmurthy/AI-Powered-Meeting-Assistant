@@ -7,6 +7,7 @@ import { ErrorPanel } from '../components/shell/ErrorPanel';
 import { StaleBanner } from '../components/shell/StaleBanner';
 import { RecordPane } from '../components/record/RecordPane';
 import { TranscriptPane } from '../components/transcript/TranscriptPane';
+import { PlayerDock } from '../components/player/PlayerDock';
 import { useRunStore } from '../state/runStore';
 import { rerunStage } from '../api/client';
 
@@ -89,6 +90,13 @@ export const RunView: React.FC = () => {
       <SplitPane
         leftPane={<RecordPane run={currentRun} />}
         rightPane={<TranscriptPane run={currentRun} />}
+      />
+
+      <PlayerDock
+        audioUrl={currentRun.audioUrl}
+        peaks={currentRun.peaks}
+        duration={currentRun.duration}
+        segments={currentRun.raw}
       />
     </div>
   );

@@ -151,7 +151,7 @@
   flex: 1;
   overflow: hidden;
   position: relative;
-  height: calc(100vh - 52px - 41px - 60px); /* topbar, rail, dock */
+  height: calc(100vh - 52px - 41px - 64px); /* topbar, rail, dock */
 }
 
 .split-left-pane {
@@ -236,3 +236,66 @@
   color: var(--ink);
   font-size: var(--t-sm);
 }
+
+/* Player Dock */
+.player-dock {
+  display: flex;
+  align-items: center;
+  height: 64px;
+  padding: 0 var(--s5);
+  background: var(--sheet);
+  border-top: 1px solid var(--rule);
+  gap: var(--s4);
+  z-index: 10;
+  position: relative;
+}
+
+.player-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  flex-shrink: 0;
+}
+
+.player-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-ctl);
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.player-btn:hover {
+  background: var(--sheet);
+  border-color: var(--blue);
+}
+
+.player-btn-primary {
+  width: 36px;
+  height: 36px;
+  background: var(--blue);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s ease;
+}
+.player-btn-primary:hover {
+  background: #1e33ab;
+}
+
+.player-waveform-container {
+  flex: 1;
+  height: 56px;
+  position: relative;
+  min-width: 0;
+}
+

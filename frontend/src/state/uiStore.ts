@@ -13,16 +13,50 @@ interface UIStoreState {
 }
 
 function getInitialTheme(): Theme {
-  const saved = localStorage.getItem('verbatim-theme');
-  if (saved === 'light' || saved === 'dark') {
-    return saved;
+  try {
+    if (typeof localStorage !== 'undefined' && typeof localStorage.getItem === 'function') {
+      const saved = localStorage.getItem('verbatim-theme');
+      if (saved === 'light' || saved === 'dark') {
+        return saved;
+      }
+    }
+    if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+  } catch {
+    // ignore
   }
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  return 'light';
 }
 
 function applyThemeToDocument(theme: Theme) {
-  document.documentElement.setAttribute('data-theme', theme);
-  localStorage.setItem('verbatim-theme', theme);
+  try {
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-theme', theme);
+    }
+    if (typeof localStorage !== 'undefined' && typeof localStorage.setItem === 'function') {
+      localStorage.setItem('verbatim-theme', theme);
+    }
+  } catch {
+    // ignore
+  }
+}
+
+function getInitialSplitRatio(): number {
+  try {
+    if (typeof localStorage !== 'undefined' && typeof localStorage.getItem === 'function') {
+      const saved = localStorage.getItem('verbatim-split-ratio');
+      if (saved) {
+        const parsed = parseFloat(saved);
+        if (!isNaN(parsed) && parsed >= 20 && parsed <= 80) {
+          return parsed;
+        }
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return 46;
 }
 
 const initialTheme = getInitialTheme();
@@ -30,7 +64,7 @@ applyThemeToDocument(initialTheme);
 
 export const useUIStore = create<UIStoreState>((set, get) => ({
   theme: initialTheme,
-  splitRatio: parseFloat(localStorage.getItem('verbatim-split-ratio') || '46'),
+  splitRatio: getInitialSplitRatio(),
   viewTab: 'raw',
 
   toggleTheme: () => {
@@ -40,9 +74,14 @@ export const useUIStore = create<UIStoreState>((set, get) => ({
   },
 
   setSplitRatio: (ratio: number) => {
-    const clamped = Math.max(25, Math.min(75, ratio));
-    localStorage.setItem('verbatim-split-ratio', clamped.toString());
-    set({ splitRatio: clamped });
+    try {
+      if (typeof localStorage !== 'undefined' && typeof localStorage.setItem === 'function') {
+        localStorage.setItem('verbatim-split-ratio', ratio.toString());
+      }
+    } catch {
+      // ignore
+    }
+    set({ splitRatio: ratio });
   },
 
   setViewTab: (tab: ViewTab) => {

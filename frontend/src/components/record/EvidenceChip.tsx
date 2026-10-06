@@ -1,7 +1,8 @@
 import React from 'react';
 import { Play } from 'lucide-react';
 import { useFocusStore } from '../../state/focusStore';
-import { formatTime } from '../../lib/segments';
+import { usePlayerStore } from '../../state/playerStore';
+import { formatTime, rangeFor } from '../../lib/segments';
 import type { Segment } from '../../api/types';
 
 interface EvidenceChipProps {
@@ -11,6 +12,7 @@ interface EvidenceChipProps {
 
 export const EvidenceChip: React.FC<EvidenceChipProps> = ({ segmentIds, segments = [] }) => {
   const { hoverIds, pinnedIds, setHover, clearHover, togglePin } = useFocusStore();
+  const { playRange, setActiveRegion } = usePlayerStore();
 
   if (!segmentIds || segmentIds.length === 0) return null;
 
@@ -25,12 +27,26 @@ export const EvidenceChip: React.FC<EvidenceChipProps> = ({ segmentIds, segments
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    const willPin = !isPinned;
     togglePin(segmentIds);
 
-    // Scroll to the first cited line in the transcript pane
-    const el = document.getElementById(`seg-${firstId}`);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (willPin) {
+      // 1. Calculate bounding time range for cited segments
+      const range = rangeFor(segmentIds, segments);
+      if (range) {
+        const [minStart, maxEnd] = range;
+        playRange(Math.max(0, minStart - 1.0), maxEnd + 0.5);
+      } else if (firstSeg) {
+        playRange(Math.max(0, firstSeg.start - 1.0), firstSeg.end + 0.5);
+      }
+
+      // 2. Scroll the first cited line into view in transcript
+      const el = document.getElementById(`seg-${firstId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    } else {
+      setActiveRegion(null);
     }
   };
 

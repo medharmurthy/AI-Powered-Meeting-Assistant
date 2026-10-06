@@ -1,10 +1,15 @@
-import React from 'react';
-import type { Segment } from '../../api/types';
+import React, { useState } from 'react';
+import type { Correction, Segment, Span } from '../../api/types';
 import { useFocusStore } from '../../state/focusStore';
+import { usePlayerStore } from '../../state/playerStore';
 import { formatTime } from '../../lib/segments';
+import { CorrectionPopover } from './CorrectionPopover';
 
 interface SegmentRowProps {
   segment: Segment;
+  spans?: Span[];
+  corrections?: Correction[];
+  runId?: string;
   isLatest?: boolean;
   isStreaming?: boolean;
   searchQuery?: string;
@@ -13,15 +18,85 @@ interface SegmentRowProps {
 
 export const SegmentRow: React.FC<SegmentRowProps> = ({
   segment,
+  spans,
+  corrections = [],
+  runId = '',
   isLatest,
   isStreaming,
   searchQuery,
   onTimeClick,
 }) => {
   const { hoverIds, pinnedIds } = useFocusStore();
+  const currentTime = usePlayerStore((s) => s.time);
+  const seek = usePlayerStore((s) => s.seek);
+
+  const [activeCorrection, setActiveCorrection] = useState<Correction | null>(null);
+  const [popoverPos, setPopoverPos] = useState<{ x: number; y: number } | null>(null);
 
   const isPinned = pinnedIds.includes(segment.id);
   const isHovered = hoverIds.includes(segment.id);
+  const isActive = currentTime >= segment.start && currentTime <= segment.end;
+
+  const handleGutterClick = () => {
+    seek(segment.start);
+    onTimeClick?.(segment.start);
+  };
+
+  const handleSpanClick = (e: React.MouseEvent, cid: string) => {
+    e.stopPropagation();
+    const corr = corrections.find((c) => c.id === cid);
+    if (corr) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      setPopoverPos({ x: rect.left, y: rect.bottom + window.scrollY + 4 });
+      setActiveCorrection(corr);
+    }
+  };
+
+  // Render text with spans if present (Refined view)
+  const renderSpannedText = (text: string, currentSpans: Span[]) => {
+    if (!currentSpans || currentSpans.length === 0) {
+      return renderHighlightedText(text, searchQuery);
+    }
+
+    const elements: React.ReactNode[] = [];
+    let lastIdx = 0;
+
+    // Sort spans by start offset
+    const sortedSpans = [...currentSpans].sort((a, b) => a.start - b.start);
+
+    sortedSpans.forEach((sp, idx) => {
+      if (sp.start > lastIdx) {
+        elements.push(
+          <span key={`text-${idx}`}>{renderHighlightedText(text.slice(lastIdx, sp.start), searchQuery)}</span>
+        );
+      }
+
+      const spanText = text.slice(sp.start, sp.end);
+      elements.push(
+        <ins
+          key={`span-${idx}`}
+          className="ins-mark"
+          onClick={(e) => handleSpanClick(e, sp.correction_id)}
+          style={{
+            cursor: 'pointer',
+            backgroundColor: 'var(--blue-wash)',
+            borderRadius: '2px',
+            padding: '0 2px',
+          }}
+          title="Click to view or toggle term correction"
+        >
+          {spanText}
+        </ins>
+      );
+      lastIdx = sp.end;
+    });
+
+    if (lastIdx < text.length) {
+      elements.push(<span key="text-end">{renderHighlightedText(text.slice(lastIdx), searchQuery)}</span>);
+    }
+
+    return elements;
+  };
 
   // Render text with search highlight if query exists
   const renderHighlightedText = (text: string, query?: string) => {
@@ -46,6 +121,29 @@ export const SegmentRow: React.FC<SegmentRowProps> = ({
     );
   };
 
+  // Render words with live spoken styling if words array is present
+  const renderWords = () => {
+    if (!segment.words || segment.words.length === 0) {
+      return renderSpannedText(segment.text, spans || []);
+    }
+
+    return segment.words.map((word, wIdx) => {
+      const isSpoken = currentTime >= word.start;
+      return (
+        <span
+          key={wIdx}
+          style={{
+            color: isSpoken ? 'var(--ink)' : 'var(--ink-soft)',
+            fontWeight: isSpoken ? 500 : 400,
+            transition: 'color 0.1s ease',
+          }}
+        >
+          {word.w}{' '}
+        </span>
+      );
+    });
+  };
+
   return (
     <div
       id={`seg-${segment.id}`}
@@ -55,6 +153,8 @@ export const SegmentRow: React.FC<SegmentRowProps> = ({
         padding: '6px 12px',
         borderLeft: isPinned
           ? '3px solid var(--marker)'
+          : isActive
+          ? '3px solid var(--blue)'
           : isHovered
           ? '3px solid var(--marker)'
           : '3px solid transparent',
@@ -62,16 +162,19 @@ export const SegmentRow: React.FC<SegmentRowProps> = ({
           ? 'var(--marker-wash)'
           : isHovered
           ? 'var(--marker-wash)'
+          : isActive
+          ? 'var(--blue-wash)'
           : 'transparent',
         transition: 'background-color 0.15s ease, border-color 0.15s ease',
         lineHeight: 1.6,
+        position: 'relative',
       }}
     >
       {/* Time Gutter (60 px) */}
       <button
         type="button"
-        onClick={() => onTimeClick?.(segment.start)}
-        title={`Jump to ${formatTime(segment.start)}`}
+        onClick={handleGutterClick}
+        title={`Click to seek and play from ${formatTime(segment.start)}`}
         style={{
           width: '60px',
           flexShrink: 0,
@@ -80,7 +183,8 @@ export const SegmentRow: React.FC<SegmentRowProps> = ({
           padding: 0,
           textAlign: 'left',
           cursor: 'pointer',
-          color: 'var(--ink-soft)',
+          color: isActive ? 'var(--blue)' : 'var(--ink-soft)',
+          fontWeight: isActive ? 700 : 400,
           fontSize: 'var(--t-xs)',
           fontFamily: 'var(--font-ui)',
         }}
@@ -113,7 +217,10 @@ export const SegmentRow: React.FC<SegmentRowProps> = ({
           flex: 1,
         }}
       >
-        {renderHighlightedText(segment.text, searchQuery)}
+        {isActive && segment.words && segment.words.length > 0
+          ? renderWords()
+          : renderSpannedText(segment.text, spans || [])}
+
         {isLatest && isStreaming && (
           <span
             aria-hidden="true"
@@ -129,6 +236,20 @@ export const SegmentRow: React.FC<SegmentRowProps> = ({
           />
         )}
       </span>
+
+      {/* Active Correction Popover */}
+      {activeCorrection && popoverPos && (
+        <CorrectionPopover
+          runId={runId}
+          correction={activeCorrection}
+          onClose={() => setActiveCorrection(null)}
+          style={{
+            top: '100%',
+            left: '60px',
+            marginTop: '4px',
+          }}
+        />
+      )}
     </div>
   );
 };
