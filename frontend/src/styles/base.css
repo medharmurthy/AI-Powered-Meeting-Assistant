@@ -1,0 +1,128 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  background-color: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+a {
+  color: var(--blue);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+/* Typography styles */
+.font-doc {
+  font-family: var(--font-doc);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sheet & card base */
+.sheet {
+  background-color: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-sheet);
+}
+
+/* Highlight & Editing marks */
+.evidence-active {
+  background-color: var(--marker-wash);
+  border-left: 3px solid var(--marker);
+}
+
+.ins-mark {
+  color: var(--blue);
+  text-decoration: underline 2px var(--blue);
+}
+
+.del-mark {
+  color: var(--ink-soft);
+  text-decoration: line-through;
+}
+
+/* Unspecified pill */
+.unspecified-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border: 1px dashed var(--ink-soft);
+  border-radius: var(--r-chip);
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: var(--t-xs);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+/* Chip pill base */
+.chip-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  padding: 4px 10px;
+  border-radius: var(--r-chip);
+  font-size: var(--t-xs);
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+
+/* Demo Data Banner */
+.demo-banner {
+  background: #FFFBEB;
+  border-bottom: 1px solid #FDE68A;
+  color: #92400E;
+  padding: 6px 16px;
+  font-size: var(--t-xs);
+  font-weight: 600;
+  text-align: center;
+}
+
+[data-theme="dark"] .demo-banner {
+  background: #451A03;
+  border-bottom: 1px solid #78350F;
+  color: #FDE68A;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

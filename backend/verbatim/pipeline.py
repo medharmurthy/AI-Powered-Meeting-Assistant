@@ -38,6 +38,11 @@ def run_pipeline(
     run_dir = get_run_dir(run_id, must_exist=True)
     meta = load_meta(run_id) or {}
 
+    import os
+    if os.environ.get("VERBATIM_FAKE") == "1":
+        from verbatim.dev_fake import run_fake_pipeline
+        return run_fake_pipeline(run_id, from_stage=from_stage)
+
     if from_stage not in STAGES:
         raise PipelineError(
             code="INTERNAL",

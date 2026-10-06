@@ -253,3 +253,8 @@ async def spa_fallback(full_path: str):
 </body>
 </html>"""
     )
+
+
+# Attach Phase 5 routes (SSE, exports, samples, reruns, background workers)
+from verbatim.routes import attach_phase5_routes
+attach_phase5_routes(app)

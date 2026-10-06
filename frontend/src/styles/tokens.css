@@ -1,0 +1,48 @@
+:root {
+  --paper: #F3F5F7;
+  --sheet: #FFFFFF;
+  --ink: #16222B;
+  --ink-soft: #55646F;
+  --rule: #D8DEE3;
+  --blue: #2A44D4;
+  --blue-wash: #E6EBFC;           /* blue pencil: actions, insertions */
+  --marker: #FFD84A;
+  --marker-wash: #FFF1B8;         /* highlighter: evidence, playback */
+  --alert: #B3261E;
+  --alert-wash: #FBE9E7;
+  --ok: #1F7A4D;
+  --font-ui: "Hanken Grotesk Variable", "Hanken Grotesk", system-ui, sans-serif;
+  --font-doc: "Literata Variable", "Literata", Georgia, serif;
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 32px;
+  --s7: 48px;
+  --r-chip: 999px;
+  --r-ctl: 6px;
+  --r-sheet: 2px;
+  --t-xs: 12.5px;
+  --t-sm: 14px;
+  --t-md: 16px;
+  --t-lg: 19px;
+  --t-xl: 24px;
+  --t-2xl: 32px;
+  --measure: 68ch;
+}
+
+:root[data-theme="dark"] {
+  --paper: #0E171D;
+  --sheet: #15222A;
+  --ink: #E8EFF3;
+  --ink-soft: #9AABB6;
+  --rule: #26363F;
+  --blue: #7C9BFF;
+  --blue-wash: #1C2A52;
+  --marker: #FFD84A;
+  --marker-wash: #3C3510;
+  --alert: #FF8A80;
+  --alert-wash: #3A1C1A;
+  --ok: #5FD39A;
+}
