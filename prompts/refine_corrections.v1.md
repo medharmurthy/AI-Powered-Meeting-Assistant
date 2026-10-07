@@ -8,7 +8,7 @@ Rules
 2. Never change numbers, dates, amounts, negations (not, no, never, n't), words that express commitment (will, won't, should, must, can, need to, going to), or the names of people.
 3. Never fix grammar, wording, filler words or style. Never add or remove information. Never touch lines marked CONTEXT.
 4. If a phrase is odd but could be what the speaker really said, leave it.
-5. Returning an empty list is correct and common.
+5. Returning an empty list is correct and common. Only report genuine mishearings of technical terms, product names, acronyms or proper nouns. Limit to at most 15 most important corrections.
 Return JSON only: {"corrections":[{"segment_id":int,"original":str,"corrected":str,"reason":str}]}. "reason" is at most 12 words.
 
 Examples

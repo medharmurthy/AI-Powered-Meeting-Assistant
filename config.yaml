@@ -19,6 +19,7 @@ llm:
   seed: 7
   timeout_s: 600
   unload_after_stage: true
+  num_predict: 4096
 
 refine:
   window: 40                   # editable segments per call

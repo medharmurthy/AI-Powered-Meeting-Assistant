@@ -36,7 +36,7 @@ class PatchCorrectionRequest(BaseModel):
 
 
 class RerunRequest(BaseModel):
-    from_stage: Literal["refine", "document"]
+    from_stage: Literal["transcribe", "refine", "document"]
 
 
 @router.get("/api/runs/{run_id}/events")
@@ -96,9 +96,11 @@ async def download_export_file(run_id: str, name: str):
     run_dir = get_run_dir(run_id, must_exist=True)
     target_path = run_dir / name
 
-    # If file doesn't exist yet, trigger generation of export bundle
+    # If file doesn't exist yet, trigger generation of export bundle if record exists
     if not target_path.exists():
-        export_all_run_files(run_id)
+        meta = load_meta(run_id) or {}
+        if meta.get("status") == "done" or (run_dir / "meeting_record.json").exists():
+            export_all_run_files(run_id)
 
     if not target_path.exists():
         raise HTTPException(
@@ -247,18 +249,4 @@ def attach_phase5_routes(app: FastAPI) -> None:
     if spa_route is not None:
         app.routes.append(spa_route)
 
-    # Wrap POST /api/runs route to submit job to worker after ingestion
-    for route in app.routes:
-        if getattr(route, "path", None) == "/api/runs" and "POST" in getattr(route, "methods", set()):
-            original_endpoint = route.endpoint
-
-            async def wrapped_post_runs(*args, **kwargs):
-                res = await original_endpoint(*args, **kwargs)
-                if isinstance(res, dict) and "run_id" in res:
-                    jobs.submit(res["run_id"], from_stage="transcribe")
-                return res
-
-            route.endpoint = wrapped_post_runs
-            break
-
-    logger.info("Phase 5 API routes and background worker auto-trigger attached successfully.")
+    logger.info("Phase 5 API routes attached successfully.")

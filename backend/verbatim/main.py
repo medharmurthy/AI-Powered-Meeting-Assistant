@@ -17,6 +17,7 @@ from fastapi import (
     UploadFile,
     status,
 )
+from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -29,6 +30,7 @@ from verbatim.ingest import (
     save_stream_to_file,
     validate_file_extension,
 )
+from verbatim.jobs import jobs
 from verbatim.schemas import (
     AppError,
     HealthResponse,
@@ -47,11 +49,19 @@ from verbatim.store import (
 
 logger = logging.getLogger("verbatim")
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    jobs.check_and_recover_interrupted_runs()
+    yield
+
+
 app = FastAPI(
     title="Verbatim API",
     version="1.0.0",
     docs_url="/api/docs",
     openapi_url="/api/openapi.json",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -151,6 +161,9 @@ async def post_runs(
 
     # 5. Process audio (decoding, duration, silence, peaks, audio.wav)
     process_audio_file(run_id, original_path)
+
+    # 6. Submit job to background worker starting from transcribe stage
+    jobs.submit(run_id, from_stage="transcribe")
 
     return {"run_id": run_id}
 

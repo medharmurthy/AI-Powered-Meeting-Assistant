@@ -58,6 +58,7 @@ class LLMConfig(BaseModel):
     seed: int = 7
     timeout_s: int = 600
     unload_after_stage: bool = True
+    num_predict: int = 4096
 
 
 class RefineConfig(BaseModel):

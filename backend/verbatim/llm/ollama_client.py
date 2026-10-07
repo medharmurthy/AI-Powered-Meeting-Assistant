@@ -15,11 +15,84 @@ logger = logging.getLogger("verbatim.llm")
 T = TypeVar("T", bound=BaseModel)
 
 
+def parse_structured_json(raw_text: str, schema: type[T]) -> T:
+    """Extract, repair, and validate JSON against schema."""
+    if not raw_text or not raw_text.strip():
+        return schema.model_validate_json(raw_text or "{}")
+
+    # 1. Direct validation attempt
+    try:
+        return schema.model_validate_json(raw_text)
+    except Exception:
+        pass
+
+    # 2. Strip markdown code fences (```json ... ``` or ``` ... ```)
+    cleaned = raw_text.strip()
+    if cleaned.startswith("```"):
+        lines = cleaned.splitlines()
+        if lines and lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].strip() == "```":
+            lines = lines[:-1]
+        cleaned = "\n".join(lines).strip()
+
+    try:
+        return schema.model_validate_json(cleaned)
+    except Exception:
+        pass
+
+    # 3. Extract substring between first '{' and last '}'
+    first_brace = cleaned.find("{")
+    last_brace = cleaned.rfind("}")
+    if first_brace != -1 and last_brace != -1 and last_brace > first_brace:
+        substring = cleaned[first_brace : last_brace + 1]
+        try:
+            return schema.model_validate_json(substring)
+        except Exception:
+            pass
+
+    # 4. Truncated JSON / EOF repair:
+    # If JSON was cut off mid-stream, attempt closing open structures after the last complete object
+    if first_brace != -1:
+        last_obj = cleaned.rfind("}")
+        if last_obj > first_brace:
+            candidate = cleaned[first_brace : last_obj + 1]
+            open_sq = candidate.count("[")
+            close_sq = candidate.count("]")
+            open_cur = candidate.count("{")
+            close_cur = candidate.count("}")
+
+            closing = ""
+            if open_sq > close_sq:
+                closing += "]" * (open_sq - close_sq)
+            if open_cur > close_cur:
+                closing += "}" * (open_cur - close_cur)
+
+            try:
+                repaired = candidate + closing
+                return schema.model_validate_json(repaired)
+            except Exception:
+                pass
+
+    # Re-raise standard ValidationError on raw_text
+    return schema.model_validate_json(raw_text)
+
+
 class OllamaClient:
-    def __init__(self, host: str | None = None):
+    def __init__(
+        self,
+        host: str | None = None,
+        temperature: float | None = None,
+        seed: int | None = None,
+        timeout_s: int | None = None,
+        **kwargs: Any,
+    ):
         cfg = get_config()
         self.host = host or cfg.llm.host
-        self.client = ollama.Client(host=self.host)
+        self.temperature = temperature if temperature is not None else cfg.llm.temperature
+        self.seed = seed if seed is not None else cfg.llm.seed
+        self.timeout_s = timeout_s if timeout_s is not None else cfg.llm.timeout_s
+        self.client = ollama.Client(host=self.host, timeout=self.timeout_s)
 
     def structured(
         self,
@@ -47,17 +120,13 @@ class OllamaClient:
             if doc_cfg.supports_think:
                 think_kwarg["think"] = False
 
+        num_predict = getattr(cfg.llm, "num_predict", 4096)
         options: dict[str, Any] = {
-            "temperature": cfg.llm.temperature,
-            "seed": cfg.llm.seed,
-            "num_predict": 2048,
+            "temperature": self.temperature,
+            "seed": self.seed,
+            "num_predict": num_predict,
             "num_ctx": num_ctx,
         }
-
-        messages = [
-            {"role": "system", "content": system},
-            {"role": "user", "content": user},
-        ]
 
         def _call_chat(msgs: list[dict[str, str]]) -> str:
             try:
@@ -93,37 +162,53 @@ class OllamaClient:
                     detail=f"Request to Ollama timed out: {exc}",
                 ) from exc
 
-        # First attempt
-        raw_text = _call_chat(messages)
-        try:
-            return schema.model_validate_json(raw_text)
-        except (ValidationError, Exception) as first_err:
-            logger.warning(
-                "Initial schema validation failed for model '%s': %s. Retrying once...",
-                model,
-                first_err,
-            )
+        max_attempts = 3
+        last_err: Exception | None = None
+        current_user_content = user
 
-            # Retry once with error appended
-            retry_messages = [
+        for attempt in range(1, max_attempts + 1):
+            messages = [
                 {"role": "system", "content": system},
-                {
-                    "role": "user",
-                    "content": (
-                        f"{user}\n\n"
-                        f"CRITICAL: Your previous response failed schema validation with error:\n{first_err}\n"
-                        f"Return strictly valid JSON that validates against the required schema."
-                    ),
-                },
+                {"role": "user", "content": current_user_content},
             ]
-            raw_text_retry = _call_chat(retry_messages)
+
+            raw_text = _call_chat(messages)
             try:
-                return schema.model_validate_json(raw_text_retry)
-            except (ValidationError, Exception) as second_err:
-                raise PipelineError(
-                    code="LLM_BAD_OUTPUT",
-                    detail=f"Model '{model}' output failed schema validation twice: {second_err}",
-                ) from second_err
+                result = parse_structured_json(raw_text, schema)
+                return result
+            except (ValidationError, Exception) as err:
+                last_err = err
+                logger.warning(
+                    "Attempt %d/%d for model '%s' failed schema validation (length %d chars, num_predict=%d): %s",
+                    attempt,
+                    max_attempts,
+                    model,
+                    len(raw_text),
+                    num_predict,
+                    err,
+                )
+
+                if attempt < max_attempts:
+                    logger.info("Retrying structured generation (attempt %d/%d) with model '%s'...", attempt + 1, max_attempts, model)
+                    current_user_content = (
+                        f"{user}\n\n"
+                        f"CRITICAL: Your previous response failed schema validation or was truncated: {err}\n"
+                        f"Return strictly valid, complete JSON matching the required schema. Keep the response concise."
+                    )
+
+        logger.error(
+            "All %d attempts failed schema validation for model '%s' (configured num_predict=%d, num_ctx=%d): %s",
+            max_attempts,
+            model,
+            num_predict,
+            num_ctx,
+            last_err,
+        )
+        raise PipelineError(
+            code="LLM_BAD_OUTPUT",
+            detail=f"Model '{model}' output failed schema validation after {max_attempts} attempts: {last_err}",
+            fix="Retry; try another model in config",
+        ) from last_err
 
     def unload(self, model: str) -> None:
         """Unload model from VRAM by setting keep_alive=0."""

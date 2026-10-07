@@ -88,6 +88,18 @@ class JobManager:
             run_pipeline(run_id=run_id, from_stage=from_stage)
         except Exception as e:
             logger.error("Job execution failed for run %s: %s", run_id, e)
+            try:
+                from verbatim.store import get_run_dir
+                if get_run_dir(run_id, must_exist=False).exists():
+                    meta = load_meta(run_id) or {}
+                    if meta.get("status") != "failed":
+                        app_err = make_app_error("INTERNAL", detail=str(e), stage=meta.get("stage"))
+                        meta["status"] = "failed"
+                        meta["error"] = app_err.model_dump()
+                        save_meta(run_id, meta)
+                        append_event(run_id, "run.failed", app_err.model_dump())
+            except Exception:
+                logger.exception("Failed to mark run %s as failed after worker error", run_id)
         finally:
             with self._lock:
                 if self._active_run_id == run_id:

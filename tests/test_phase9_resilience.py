@@ -1,18 +1,23 @@
-from __future__ import annotations
-
+import io
 import json
-from unittest.mock import patch
+import math
+import struct
+import wave
+from unittest.mock import patch, MagicMock
 import pytest
 from starlette.testclient import TestClient
 
 from verbatim.app import app
 from verbatim.errors import CATALOGUE, PipelineError, make_app_error
 from verbatim.export.exporter import verify_parity
+from verbatim.jobs import jobs
 from verbatim.pipeline import run_pipeline
 from verbatim.schemas import MeetingRecord, MinutesTopic, Decision, ActionItem
 from verbatim.store import (
     build_run_state,
     create_run,
+    delete_run,
+    events_since,
     get_run_dir,
     load_meta,
     save_json,
@@ -204,3 +209,102 @@ def test_run_state_includes_export_parity(client):
     data = resp.json()
     assert "exportParity" in data
     assert data["exportParity"] == {"decisions": 2, "tasks": 3, "ok": True}
+
+
+def _make_dummy_wav_bytes(duration_s: float = 3.0) -> bytes:
+    num_samples = int(duration_s * 16000)
+    buf = io.BytesIO()
+    with wave.open(buf, "wb") as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
+        wf.setframerate(16000)
+        samples = [
+            int(0.5 * 32767.0 * math.sin(2.0 * math.pi * 440.0 * i / 16000))
+            for i in range(num_samples)
+        ]
+        wf.writeframes(struct.pack(f"<{len(samples)}h", *samples))
+    return buf.getvalue()
+
+
+def test_post_runs_submits_job_to_worker(client):
+    """Verify that uploading audio via POST /api/runs enqueues the job to background worker."""
+    wav_bytes = _make_dummy_wav_bytes(duration_s=3.0)
+    with patch.object(jobs, "submit") as mock_submit:
+        resp = client.post(
+            "/api/runs",
+            files={"file": ("meeting.wav", wav_bytes, "audio/wav")},
+        )
+        assert resp.status_code == 202
+        data = resp.json()
+        assert "run_id" in data
+        mock_submit.assert_called_once_with(data["run_id"], from_stage="transcribe")
+
+
+def test_queued_run_transitions_to_processing():
+    """Verify that jobs.submit transitions a run from queued to running with appropriate events."""
+    run_id = create_run(filename="queued_transition_test.wav")
+    try:
+        run_dir = get_run_dir(run_id)
+        # Create audio.wav so transcribe can find it
+        wav_bytes = _make_dummy_wav_bytes(duration_s=2.5)
+        (run_dir / "audio.wav").write_bytes(wav_bytes)
+
+        # Mock run_pipeline to verify it gets invoked by the worker
+        with patch("verbatim.jobs.run_pipeline") as mock_pipeline:
+            jobs.submit(run_id, from_stage="transcribe")
+
+            # Wait briefly for thread execution
+            import time
+            for _ in range(20):
+                if mock_pipeline.called:
+                    break
+                time.sleep(0.05)
+
+            assert mock_pipeline.called
+            mock_pipeline.assert_called_once_with(run_id=run_id, from_stage="transcribe")
+
+        evs = events_since(run_id, 0)
+        event_types = [e["type"] for e in evs]
+        assert "run.queued" in event_types
+    finally:
+        delete_run(run_id)
+
+
+def test_worker_exception_marks_run_failed():
+    """Verify worker exceptions guarantee run status becomes failed and run.failed event is emitted."""
+    run_id = create_run(filename="crash_test.wav")
+    try:
+        def crashing_pipeline(run_id, from_stage):
+            raise RuntimeError("Unexpected pipeline crash")
+
+        with patch("verbatim.jobs.run_pipeline", side_effect=crashing_pipeline):
+            jobs.submit(run_id, from_stage="transcribe")
+
+            import time
+            for _ in range(20):
+                meta = load_meta(run_id) or {}
+                if meta.get("status") == "failed":
+                    break
+                time.sleep(0.05)
+
+            meta = load_meta(run_id) or {}
+            assert meta.get("status") == "failed"
+            assert meta.get("error") is not None
+            assert meta["error"]["code"] == "INTERNAL"
+
+            evs = events_since(run_id, 0)
+            assert any(e["type"] == "run.failed" for e in evs)
+    finally:
+        delete_run(run_id)
+
+
+def test_rerun_endpoint_supports_transcribe_stage(client):
+    """Verify POST /api/runs/{id}/rerun allows retrying from transcribe stage."""
+    run_id = create_run(filename="rerun_transcribe_test.wav")
+    try:
+        with patch.object(jobs, "submit") as mock_submit:
+            resp = client.post(f"/api/runs/{run_id}/rerun", json={"from_stage": "transcribe"})
+            assert resp.status_code == 202
+            mock_submit.assert_called_once_with(run_id, from_stage="transcribe")
+    finally:
+        delete_run(run_id)

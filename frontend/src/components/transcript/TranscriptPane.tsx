@@ -446,6 +446,18 @@ export const TranscriptPane: React.FC<TranscriptPaneProps> = ({ run, onSeekTime 
               <div style={{ padding: 'var(--s5)', textAlign: 'center', color: 'var(--ink-soft)' }}>
                 No segments matching “{searchQuery}”
               </div>
+            ) : run.status === 'queued' ? (
+              <div style={{ padding: 'var(--s5)', textAlign: 'center', color: 'var(--ink-soft)', fontStyle: 'italic' }}>
+                Queued for processing…
+              </div>
+            ) : run.status === 'running' ? (
+              <div style={{ padding: 'var(--s5)', textAlign: 'center', color: 'var(--ink-soft)', fontStyle: 'italic' }}>
+                Preparing audio…
+              </div>
+            ) : run.status === 'failed' ? (
+              <div style={{ padding: 'var(--s5)', textAlign: 'center', color: 'var(--ink-soft)', fontStyle: 'italic' }}>
+                Processing stopped due to an error.
+              </div>
             ) : (
               <div style={{ padding: 'var(--s5)', textAlign: 'center', color: 'var(--ink-soft)', fontStyle: 'italic' }}>
                 No speech detected in this recording.

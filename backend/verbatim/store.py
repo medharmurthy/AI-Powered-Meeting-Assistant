@@ -103,8 +103,15 @@ def load_meta(run_id: str) -> dict[str, Any]:
     meta_path = run_dir / "meta.json"
     if not meta_path.exists():
         return {}
-    with open(meta_path, "r", encoding="utf-8") as f:
-        return json.load(f)
+    for attempt in range(5):
+        try:
+            with open(meta_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except (PermissionError, json.JSONDecodeError):
+            if attempt == 4:
+                raise
+            time.sleep(0.02 * (attempt + 1))
+    return {}
 
 
 def save_json(run_id: str, filename: str, data: Any) -> Path:

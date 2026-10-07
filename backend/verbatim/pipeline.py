@@ -61,6 +61,7 @@ def run_pipeline(
     meta["status"] = "running"
     meta["stage"] = from_stage
     meta["models"] = models_info
+    meta["error"] = None
     save_meta(run_id, meta)
 
     append_event(
@@ -107,43 +108,19 @@ def run_pipeline(
 
         # 2. Stage: TRANSCRIBE
         if "transcribe" in stages_to_run:
-            t0 = time.time()
-            stt_model = cfg.active_profile_config.stt.model
-            append_event(run_id, "stage.started", {"stage": "transcribe", "model": stt_model})
             meta["stage"] = "transcribe"
             save_meta(run_id, meta)
 
-            def on_stt_progress(done_s: float, total_s: float, label: str):
-                append_event(
-                    run_id,
-                    "stage.progress",
-                    {"stage": "transcribe", "done": done_s, "total": total_s, "label": label},
-                )
-
-            raw_transcript = transcribe_audio(
-                run_id=run_id,
-                progress_callback=on_stt_progress,
-            )
-
-            # Broadcast transcribed segments for live UI streaming
-            for seg in raw_transcript.segments:
-                append_event(run_id, "transcript.segment", seg.model_dump())
-
-            elapsed = time.time() - t0
-            append_event(run_id, "stage.done", {"stage": "transcribe", "seconds": round(elapsed, 2)})
+            raw_transcript = transcribe_audio(run_id=run_id)
 
         # 3. Stage: REFINE
         if "refine" in stages_to_run:
-            t0 = time.time()
             refiner_model = cfg.active_profile_config.refiner.model
             append_event(run_id, "stage.started", {"stage": "refine", "model": refiner_model})
             meta["stage"] = "refine"
             save_meta(run_id, meta)
 
             refined_transcript = refine_transcript(run_id=run_id)
-
-            elapsed = time.time() - t0
-            append_event(run_id, "stage.done", {"stage": "refine", "seconds": round(elapsed, 2)})
 
         # 4. Stage: DOCUMENT
         if "document" in stages_to_run:
@@ -169,6 +146,7 @@ def run_pipeline(
         meta = load_meta(run_id) or {}
         meta["status"] = "done"
         meta["stage"] = None
+        meta["error"] = None
         save_meta(run_id, meta)
         append_event(run_id, "run.done", {})
         logger.info("Pipeline completed successfully for run %s", run_id)

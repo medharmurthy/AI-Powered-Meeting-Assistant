@@ -43,6 +43,11 @@ export const ExportSection: React.FC<ExportSectionProps> = ({ run }) => {
 
     async function loadPreview() {
       if (!run.id) return;
+      if (run.status !== 'done') {
+        setIsLoadingPreview(false);
+        setPreviewError('Export deliverables will be available once processing completes.');
+        return;
+      }
       setIsLoadingPreview(true);
       setPreviewError(null);
 

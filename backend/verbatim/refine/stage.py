@@ -204,22 +204,22 @@ def refine_transcript(
 
             for s in ctx_before:
                 lines_list.append(f"[{s.id}] CONTEXT: {s.text}")
-                window_hints.extend(hints_by_seg.get(s.id, []))
             for s in editable_segs:
                 lines_list.append(f"[{s.id}] {s.text}")
                 window_hints.extend(hints_by_seg.get(s.id, []))
             for s in ctx_after:
                 lines_list.append(f"[{s.id}] CONTEXT: {s.text}")
-                window_hints.extend(hints_by_seg.get(s.id, []))
 
-            # Deduplicate hints for this window
+            # Deduplicate hints for this window, prioritising highest confidence, max 15 per chunk
             seen_hint_keys = set()
             dedup_hints = []
-            for h in window_hints:
+            for h in sorted(window_hints, key=lambda x: -x.score):
                 key = (h.segment_id, h.heard.lower(), h.term.lower())
                 if key not in seen_hint_keys:
                     seen_hint_keys.add(key)
                     dedup_hints.append(h)
+                    if len(dedup_hints) >= 15:
+                        break
 
             rendered_corr_prompt = corrections_template.render(
                 profile=domain_profile,
