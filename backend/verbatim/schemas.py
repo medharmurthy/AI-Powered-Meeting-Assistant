@@ -204,3 +204,4 @@ class RunState(BaseModel):
     recordStale: bool = False
     warnings: list[AppError] = Field(default_factory=list)
     error: AppError | None = None
+    exportParity: dict[str, Any] | None = None

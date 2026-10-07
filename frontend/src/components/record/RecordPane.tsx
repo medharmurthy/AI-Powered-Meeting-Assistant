@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ShieldAlert, X } from 'lucide-react';
 import type { RunState } from '../../api/types';
 import { RecordNav } from './RecordNav';
@@ -7,6 +7,7 @@ import { MinutesSection } from './MinutesSection';
 import { DecisionsSection } from './DecisionsSection';
 import { UnresolvedSection } from './UnresolvedSection';
 import { TasksSection } from './TasksSection';
+import { ExportSection } from './ExportSection';
 import { formatTime } from '../../lib/segments';
 
 interface RecordPaneProps {
@@ -15,6 +16,31 @@ interface RecordPaneProps {
 
 export const RecordPane: React.FC<RecordPaneProps> = ({ run }) => {
   const [showDroppedPopover, setShowDroppedPopover] = useState(false);
+  const popoverRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showDroppedPopover) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowDroppedPopover(false);
+      }
+    };
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        setShowDroppedPopover(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showDroppedPopover]);
 
   const isDocRunning = run.status === 'running' && run.stage === 'document';
   const record = run.record || {};
@@ -95,6 +121,7 @@ export const RecordPane: React.FC<RecordPaneProps> = ({ run }) => {
               {/* Dropped items popover */}
               {showDroppedPopover && (
                 <div
+                  ref={popoverRef}
                   className="sheet"
                   role="dialog"
                   aria-label="Removed model suggestions"
@@ -200,6 +227,8 @@ export const RecordPane: React.FC<RecordPaneProps> = ({ run }) => {
           segments={segments}
           isWriting={isDocRunning && (!record.action_items || record.action_items.length === 0)}
         />
+
+        <ExportSection run={run} />
       </div>
     </div>
   );

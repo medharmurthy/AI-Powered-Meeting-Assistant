@@ -5,6 +5,7 @@ import { StageRail } from '../components/shell/StageRail';
 import { SplitPane } from '../components/shell/SplitPane';
 import { ErrorPanel } from '../components/shell/ErrorPanel';
 import { StaleBanner } from '../components/shell/StaleBanner';
+import { WarningBanner } from '../components/shell/WarningBanner';
 import { RecordPane } from '../components/record/RecordPane';
 import { TranscriptPane } from '../components/transcript/TranscriptPane';
 import { PlayerDock } from '../components/player/PlayerDock';
@@ -30,8 +31,9 @@ export const RunView: React.FC = () => {
   };
 
   const handleRetryFromStep = async () => {
-    if (runId && currentRun?.stage) {
-      const fromStage = currentRun.stage === 'document' ? 'document' : 'refine';
+    if (runId) {
+      const stageCandidate = currentRun?.stage || currentRun?.error?.stage;
+      const fromStage = stageCandidate === 'document' ? 'document' : 'refine';
       await rerunStage(runId, fromStage);
       loadRun(runId);
     }
@@ -78,6 +80,8 @@ export const RunView: React.FC = () => {
         progress={currentRun.progress}
         models={currentRun.models}
       />
+
+      <WarningBanner warnings={currentRun.warnings} />
 
       {currentRun.recordStale && (
         <StaleBanner onRewrite={handleRewrite} />

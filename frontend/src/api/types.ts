@@ -195,6 +195,11 @@ export interface RunState {
   recordStale: boolean;
   warnings: AppError[];
   error?: AppError;
+  exportParity?: {
+    decisions: number;
+    tasks: number;
+    ok: boolean;
+  };
 }
 
 export interface RunEvent {

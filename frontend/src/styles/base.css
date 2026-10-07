@@ -35,10 +35,13 @@ button, input, select, textarea {
 }
 
 button:focus-visible,
+a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
-[tabindex]:focus-visible {
+[tabindex]:focus-visible,
+[role="button"]:focus-visible,
+[role="tab"]:focus-visible {
   outline: 2px solid var(--blue);
   outline-offset: 2px;
 }

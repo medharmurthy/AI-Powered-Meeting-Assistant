@@ -270,4 +270,5 @@ def build_run_state(run_id: str) -> RunState:
         recordStale=meta.get("record_stale", False),
         warnings=warnings,
         error=error,
+        exportParity=meta.get("export_parity"),
     )

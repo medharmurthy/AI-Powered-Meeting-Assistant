@@ -195,7 +195,10 @@ export const Home: React.FC = () => {
         </div>
 
         {/* Past Recordings */}
-        <RecentRuns runs={runs} />
+        <RecentRuns
+          runs={runs}
+          onDeleted={(id) => setRuns((prev) => prev.filter((r) => r.id !== id))}
+        />
       </main>
     </div>
   );

@@ -298,7 +298,7 @@ export const PlayerDock: React.FC<PlayerDockProps> = ({
       </div>
 
       {/* Trailing Controls: Evidence Indicator, Speed, Follow Playback */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)', flexShrink: 0 }}>
+      <div className="player-trailing-controls" style={{ display: 'flex', alignItems: 'center', gap: 'var(--s3)', flexShrink: 0 }}>
         {activeRegion && (
           <div
             style={{

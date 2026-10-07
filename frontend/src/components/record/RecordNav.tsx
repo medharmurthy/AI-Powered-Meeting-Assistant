@@ -11,6 +11,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'section-decisions', label: 'Decisions' },
   { id: 'section-unresolved', label: 'Not settled' },
   { id: 'section-tasks', label: 'Tasks' },
+  { id: 'section-export', label: 'Export' },
 ];
 
 export const RecordNav: React.FC = () => {
