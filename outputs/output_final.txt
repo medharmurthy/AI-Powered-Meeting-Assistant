@@ -1,0 +1,77 @@
+# Movie and Travel Discussion
+meeting_280_1771599776441.mp3 · 2026-10-07 · 05:48
+
+## Summary
+David and John discussed movies and travel experiences. David mentioned enjoying science fiction movies like Interstellar and plans for a movie weekend. John shared experiences traveling to Italy, Zimbabwe, and Tonga, including swimming with whales. They both expressed enjoyment of their travel experiences and looked forward to future conversations.
+
+## Attendees
+
+- David
+- John
+
+
+
+## Minutes
+
+
+### Initial Greetings and Catching Up
+- David and another person greeted each other and acknowledged it had been a while. [0] [00:02]
+- One person had been traveling and watching movies. [2] [00:17]
+- The other person was planning to go to the cinema tomorrow evening. [6] [00:42]
+- They were unsure if there were any good movies currently playing. [7] [00:45]
+- One movie, featuring an actress from 'The Blonde One', was mentioned, but the name was forgotten. [9] [01:00]
+
+
+### Movie Preferences
+- One person was considering watching 'Wuthering Heights'. [10] [01:09]
+- The person enjoys science fiction movies, particularly those set in the near future. [16,17,18,19,20] [02:02]
+- 'Interstellar' was considered one of the best movies ever. [21,22,23,24] [02:40]
+- It was suggested that 'Interstellar' could be a good choice for watching later. [27,28,29] [02:52]
+- It was suggested that it would be a 'movies weekend'. [31,32,33,34] [03:00]
+
+
+### Travel Experiences
+- One person recently booked a trip to Italy for the beginning of March. [37,38] [03:15]
+- The person previously traveled to Zimbabwe and enjoyed the local culture and food. [40,41] [03:36]
+- The person swam with whales in Tonga, which was described as an incredible, albeit slightly scary, experience. [42,43,44,45,46,47,48,49,50,51] [03:49]
+- Swimming with dolphins was also recommended. [52] [04:45]
+- Looking into a dolphin's eyes can be an emotional and bonding experience. [54,55] [04:55]
+- The person did not have the same experience with the dolphins, as they did not look them in the eyes. [56,57,58] [05:09]
+
+
+
+
+## Decisions
+
+- **D1.** David will check what movies are playing at the cinema. [00:42]
+
+- **D2.** David booked a trip to Italy. [03:15]
+
+- **D3.** David enjoyed his trip to Zimbabwe. [03:36]
+
+- **D4.** It's going to be a movies weekend for David. [03:00]
+
+
+
+
+## Discussed, not settled
+
+- **U1.** (proposal) David might watch 'Wuthering Heights'. [01:00]
+- **U2.** (proposal) David will consider watching Interstellar. [02:48]
+- **U3.** (proposal) David recommends swimming with dolphins. [04:45]
+- **U4.** (possible_task) watch a movie [01:28]
+- **U5.** (possible_task) figure out if I want to watch something [02:50]
+
+
+
+## Action items
+
+| # | Task | Owner | Deadline | Source |
+|---|------|-------|----------|--------|
+| T1 | check what's in the cinema | David | Unspecified | [00:42] |
+| T2 | book for Italy | Unspecified | beginning of march in two weeks | [03:15] |
+
+
+
+## How this was made
+STT: large-v3 · Refiner: qwen3:8b · Documenter: gemma3:12b · Generated: 2026-10-07T16:54:46Z
