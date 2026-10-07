@@ -1,19 +1,6 @@
 # Verbatim: AI-Powered Meeting Assistant
 
-## Short Description
-
-Verbatim is an AI-powered local meeting assistant that converts audio and video recordings into accurate transcripts and verifiable meeting records. The system uses a decoupled pipeline to transcribe speech, repair technical terminology with deterministic guardrails, and generate grounded meeting minutes. Every recorded decision and task links directly to exact audio timestamps and transcript line identifiers for one-click verification.
-
-## Key Features
-
-- **Local Speech Recognition**: Transcribes recordings locally using faster-whisper with Voice Activity Detection (VAD) and word-level timestamps across 11 audio and video formats.
-- **Dual-Model Decoupled Pipeline**: Separates transcript repair using Qwen from structured document generation using Gemma to prevent hallucination propagation.
-- **Deterministic Transcript Guardrails**: Validates proposed corrections against invariance rules that block modifications to numbers, negations, and commitment verbs.
-- **Verifiable Evidence Anchoring**: Binds synthesized decisions, tasks, and discussion points to transcript line IDs, highlighting the text and seeking the audio player to the exact spoken moment.
-- **Strict Grounding Rules**: Demotes generic pronouns to an explicit Unspecified status for missing owners or deadlines and routes unresolved debates to a dedicated Discussed, not settled section.
-- **Real-Time Interactive Workspace**: Streams pipeline progress live via Server-Sent Events (SSE) into a dual-pane React web interface featuring audio waveform playback, transcript diff comparison, and manual correction toggles.
-- **Multi-Format Export with Parity Verification**: Exports transcripts (TXT, SRT, JSON), correction logs (CSV), meeting records (Markdown, JSON), and an all-in-one ZIP archive with server-side structural parity checks.
-- **Hardware Profile Adaptation**: Automatically selects model configurations across lite (CPU or up to 6 GB VRAM), standard (8 GB VRAM), and quality (12 GB VRAM or higher) profiles with automatic CPU fallback.
+![Verbatim Architecture and Multi-Model Pipeline](report/verbatim_model_pipeline.png)
 
 ## Installation and Setup
 
